@@ -1,19 +1,27 @@
 // src/App.tsx
-import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom"; // ❌ removed BrowserRouter import
+import { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+
 import LoginScreen from "./components/LoginScreen";
 import MainMenu from "./components/MainMenu";
-import Profile from "./components/Profile"; // make sure file name matches
-import { User } from "./types/index";
+import Profile from "./components/Profile";
+
+import VSLoadingScreen from "./components/VSLoadingScreen";
+import BattleRoom from "./pages/BattleRoom";
+
+import { User } from "./types";
 import { supabase } from "./lib/supabaseClient";
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
+
       if (data.session?.user) {
         const u = data.session.user;
         setUser({
@@ -31,32 +39,35 @@ function App() {
           joinDate: new Date().toISOString().split("T")[0],
         });
       }
+
       setLoading(false);
     };
 
     getSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        const u = session.user;
-        setUser({
-          id: u.id,
-          username: u.email?.split("@")[0] || "User",
-          email: u.email || "",
-          rating: 1200,
-          gamesPlayed: 0,
-          wins: 0,
-          losses: 0,
-          draws: 0,
-          averageSolveTime: 0,
-          favoriteLanguages: [],
-          achievements: [],
-          joinDate: new Date().toISOString().split("T")[0],
-        });
-      } else {
-        setUser(null);
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user) {
+          const u = session.user;
+          setUser({
+            id: u.id,
+            username: u.email?.split("@")[0] || "User",
+            email: u.email || "",
+            rating: 1200,
+            gamesPlayed: 0,
+            wins: 0,
+            losses: 0,
+            draws: 0,
+            averageSolveTime: 0,
+            favoriteLanguages: [],
+            achievements: [],
+            joinDate: new Date().toISOString().split("T")[0],
+          });
+        } else {
+          setUser(null);
+        }
       }
-    });
+    );
 
     return () => {
       listener.subscription.unsubscribe();
@@ -78,20 +89,31 @@ function App() {
         <Route path="*" element={<LoginScreen onLogin={handleLogin} />} />
       ) : (
         <>
+          {/* Home / Main Menu */}
           <Route
-            path="/"
-            element={
-              <MainMenu
-                user={user}
-                onQuickMatch={() => alert("Quick match coming soon!")}
-                onProfile={() => (window.location.href = "/profile")}
-              />
-            }
-          />
+  path="/"
+  element={
+    <MainMenu
+      user={user}
+      onProfile={() => navigate("/profile")}
+    />
+  }
+/>
+
+
+          {/* Profile */}
           <Route
             path="/profile"
             element={<Profile user={user} onLogout={handleLogout} />}
           />
+
+          {/* VS Screen */}
+          <Route path="/vs/:id" element={<VSLoadingScreen />} />
+
+          {/* Battle Room */}
+          <Route path="/battle/:id" element={<BattleRoom />} />
+
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
         </>
       )}

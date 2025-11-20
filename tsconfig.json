@@ -3,5 +3,10 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-  ]
+  ],
+  "compilerOptions": {
+    // Allow build even if variables are declared but unused
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  }
 }

@@ -1,62 +1,43 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { Trophy, Calendar, Clock, Code, Award, TrendingUp } from "lucide-react";
+import { Trophy, Calendar, Clock, Code } from "lucide-react";
 
 import type { User, Match } from "../types";
 
 interface ProfileProps {
-  onBack: () => void;
+  user: User;
+  onLogout: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ onBack }) => {
-  const [user, setUser] = useState<User | null>(null);
+const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchMatches = async () => {
       setLoading(true);
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
 
-      if (authError || !user) {
-        console.error(authError);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch user details from the "users" table
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (userError) console.error(userError);
-      else setUser(userData);
-
-      // Fetch matches where user is player1 or player2
-      const { data: matchesData, error: matchesError } = await supabase
+      const { data: matchesData, error } = await supabase
         .from("matches")
-        .select(`
-          *,
-          player1:player1 (username, id),
-          player2:player2 (username, id),
-          winner:winner (id)
-        `)
+        .select(
+          `
+            *,
+            player1:player1 (id, username),
+            player2:player2 (id, username),
+            winner:winner (id)
+          `
+        )
         .or(`player1.eq.${user.id},player2.eq.${user.id}`)
-        .order("date", { ascending: false });
+        .order("created_at", { ascending: false });
 
-      if (matchesError) console.error(matchesError);
-      else setMatches(matchesData || []);
-
+      if (!error && matchesData) setMatches(matchesData as Match[]);
       setLoading(false);
     };
 
-    fetchProfile();
-  }, []);
+    fetchMatches();
+  }, [user.id]);
+
+ 
 
   if (loading) {
     return (
@@ -66,32 +47,159 @@ const Profile: React.FC<ProfileProps> = ({ onBack }) => {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gray-900">
-        No user found
-      </div>
-    );
-  }
-
-  const winRate =
-    user.gamesPlayed > 0 ? (user.wins / user.gamesPlayed) * 100 : 0;
-
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
+        {/* HEADER */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-white">Profile</h1>
           <button
-            onClick={onBack}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            onClick={onLogout}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
           >
-            Back to Menu
+            Logout
           </button>
         </div>
 
-        {/* Insert your existing UI structure below this point */}
-        {/* ... same UI you pasted, using user and matches state ... */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* USER INFO */}
+          <div className="lg:col-span-1">
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+              <div className="text-center mb-6">
+                <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">
+                    {user.username.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+
+                <h2 className="text-2xl font-bold text-white">
+                  {user.username}
+                </h2>
+                <p className="text-gray-400">{user.email}</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="w-5 h-5 text-yellow-400" />
+                    <span className="text-gray-300">Rating</span>
+                  </div>
+                  <span className="text-2xl font-bold text-white">
+                    {user.rating}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-5 h-5 text-blue-400" />
+                    <span className="text-gray-300">Joined</span>
+                  </div>
+                  <span className="text-white">{user.joinDate}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-5 h-5 text-green-400" />
+                    <span className="text-gray-300">Avg. Solve Time</span>
+                  </div>
+                  <span className="text-white">{user.averageSolveTime}s</span>
+                </div>
+              </div>
+            </div>
+
+            {/* FAVORITE LANGUAGES */}
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <div className="flex items-center space-x-2 mb-4">
+                <Code className="w-5 h-5 text-purple-400" />
+                <h3 className="text-lg font-semibold text-white">
+                  Favorite Languages
+                </h3>
+              </div>
+
+              <div className="space-y-2">
+                {user.favoriteLanguages.length === 0 && (
+                  <p className="text-gray-400">No languages added yet</p>
+                )}
+
+                {user.favoriteLanguages.map((lang, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between"
+                  >
+                    <span className="text-gray-300">{lang}</span>
+                    <div className="w-16 bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-purple-400 h-2 rounded-full"
+                        style={{ width: `${Math.max(20, 100 - index * 20)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* MATCH HISTORY */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Recent Matches
+              </h3>
+
+              {matches.length === 0 ? (
+                <p className="text-gray-400 text-center py-8">
+                  No matches played yet
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {matches.slice(0, 5).map((match, index) => {
+                    const opponent =
+                      match.player1.id === user.id
+                        ? match.player2
+                        : match.player1;
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div
+                            className={`w-3 h-3 rounded-full ${
+                              match.winner?.id === user.id
+                                ? "bg-green-400"
+                                : "bg-red-400"
+                            }`}
+                          ></div>
+
+                          <div>
+                            <div className="text-white font-medium">
+                              vs {opponent?.username || "Unknown"}
+                            </div>
+
+                            <div className="text-sm text-gray-400">
+                              {match.problem?.title || "Unknown Problem"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <div className="text-white font-medium">
+                            {match.winner?.id === user.id ? "Won" : "Lost"}
+                          </div>
+                          <div className="text-sm text-gray-400">
+                            {match.created_at?.split("T")[0] ?? "Unknown"}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
