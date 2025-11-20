@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 // Import JSON files
 import cppData from "../data/cpp.json";
