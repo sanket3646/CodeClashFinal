@@ -1,3 +1,4 @@
+// src/pages/VSLoadingScreen.tsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -27,15 +28,14 @@ export default function VSLoadingScreen() {
       setMatch(data);
       setLoading(false);
 
-      // If both players are present -> start match
-      if (data.status === "ready") {
+      // Only navigate if real second player joined
+      if (data.player2 && data.status === "ready") {
         navigate(`/battle/${id}`);
       }
     };
 
     loadMatch();
 
-    // Real-time subscription to match updates
     const channel = supabase
       .channel(`match-${id}`)
       .on(
@@ -50,7 +50,8 @@ export default function VSLoadingScreen() {
           const updated = payload.new;
           setMatch(updated);
 
-          if (updated.status === "ready") {
+          // Only navigate when actual second player exists
+          if (updated.player2 && updated.status === "ready") {
             navigate(`/battle/${id}`);
           }
         }
@@ -72,7 +73,7 @@ export default function VSLoadingScreen() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center space-y-6">
-      <h1 className="text-4xl font-bold">Match Found</h1>
+      <h1 className="text-4xl font-bold">Waiting For Player</h1>
 
       <div className="flex space-x-12 items-center text-center">
         <div className="text-2xl">
@@ -98,7 +99,7 @@ export default function VSLoadingScreen() {
       <p className="text-gray-400 text-sm">
         {match.player2
           ? "Starting match..."
-          : "Waiting for another player to join..."}
+          : "Share the match code with your friend."}
       </p>
     </div>
   );
