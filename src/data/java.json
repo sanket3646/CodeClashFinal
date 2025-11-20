@@ -1,0 +1,84 @@
+{
+  "topics": [
+    {
+      "title": "1. Introduction to Java",
+      "content": "Theory:\nJava is a class-based, object-oriented programming language that runs on the Java Virtual Machine (JVM).\n\nExample:\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, Java!\");\n    }\n}"
+    },
+    {
+      "title": "2. Setting Up Java",
+      "content": "Theory:\nTo run Java, install JDK and configure JAVA_HOME.\n\nExample:\nCheck version using:\njava -version"
+    },
+    {
+      "title": "3. Basic Syntax",
+      "content": "Theory:\nJava programs must have a class and a main method.\n\nExample:\npublic class Test {\n    public static void main(String[] args) {\n        System.out.println(\"Basic Syntax\");\n    }\n}"
+    },
+    {
+      "title": "4. Variables and Data Types",
+      "content": "Theory:\nJava supports int, float, double, char, boolean, String.\n\nExample:\nint age = 20;\ndouble price = 99.9;\nchar grade = 'A';\nboolean isValid = true;"
+    },
+    {
+      "title": "5. Operators",
+      "content": "Theory:\nJava has arithmetic, logical, relational, and bitwise operators.\n\nExample:\nint a = 10, b = 5;\nSystem.out.println(a + b);"
+    },
+    {
+      "title": "6. Conditional Statements",
+      "content": "Theory:\nJava supports if-else and switch.\n\nExample:\nint marks = 80;\nif (marks > 75) {\n    System.out.println(\"Distinction\");\n}"
+    },
+    {
+      "title": "7. Loops in Java",
+      "content": "Theory:\nJava supports for, while, do-while loops.\n\nExample:\nfor (int i = 1; i <= 5; i++) {\n    System.out.println(i);\n}"
+    },
+    {
+      "title": "8. Methods",
+      "content": "Theory:\nReusable blocks of code.\n\nExample:\nstatic int add(int a, int b) {\n    return a + b;\n}"
+    },
+    {
+      "title": "9. Classes and Objects",
+      "content": "Theory:\nJava is object-oriented.\n\nExample:\nclass Student {\n    String name;\n}"
+    },
+    {
+      "title": "10. Inheritance",
+      "content": "Theory:\nOne class inherits another using extends.\n\nExample:\nclass Animal {}\nclass Dog extends Animal {}"
+    },
+    {
+      "title": "11. Polymorphism",
+      "content": "Theory:\nCompile-time and runtime polymorphism.\n\nExample:\nvoid show(int a)\nvoid show(String b)"
+    },
+    {
+      "title": "12. Abstraction",
+      "content": "Theory:\nAchieved using abstract classes and interfaces.\n\nExample:\nabstract class Car {\n    abstract void drive();\n}"
+    },
+    {
+      "title": "13. Encapsulation",
+      "content": "Theory:\nHide data using private variables.\n\nExample:\nclass Demo {\n    private int x;\n}"
+    },
+    {
+      "title": "14. Packages",
+      "content": "Theory:\nPackages organize classes.\n\nExample:\npackage myPackage;"
+    },
+    {
+      "title": "15. Exception Handling",
+      "content": "Theory:\nHandle runtime errors using try-catch.\n\nExample:\ntry {\n    int x = 5 / 0;\n} catch (Exception e) {\n    System.out.println(\"Error!\");\n}"
+    },
+    {
+      "title": "16. Java Collections Framework",
+      "content": "Theory:\nIncludes ArrayList, HashSet, HashMap.\n\nExample:\nArrayList<Integer> list = new ArrayList<>();"
+    },
+    {
+      "title": "17. Generics",
+      "content": "Theory:\nGenerics provide type safety.\n\nExample:\nArrayList<String> names = new ArrayList<>();"
+    },
+    {
+      "title": "18. Multithreading",
+      "content": "Theory:\nRun tasks in parallel using Thread.\n\nExample:\nclass MyThread extends Thread {\n    public void run() {\n        System.out.println(\"Thread running\");\n    }\n}"
+    },
+    {
+      "title": "19. File Handling",
+      "content": "Theory:\nUse File, FileReader, FileWriter classes.\n\nExample:\nFile file = new File(\"test.txt\");"
+    },
+    {
+      "title": "20. Java Streams",
+      "content": "Theory:\nStreams support functional programming.\n\nExample:\nStream.of(1,2,3).forEach(System.out::println);"
+    }
+  ]
+}

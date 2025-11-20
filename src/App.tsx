@@ -8,7 +8,7 @@ import Profile from "./components/Profile";
 
 import VSLoadingScreen from "./components/VSLoadingScreen";
 import BattleRoom from "./pages/BattleRoom";
-
+import LearningMode from "./pages/LearningMode"; // ✅ added correct import
 import { User } from "./types";
 import { supabase } from "./lib/supabaseClient";
 
@@ -113,6 +113,7 @@ function App() {
           {/* Battle Room */}
           <Route path="/battle/:id" element={<BattleRoom />} />
 
+          <Route path="/learning" element={<LearningMode />} /> {/* ✅ added missing route */}
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
         </>

@@ -1,0 +1,12 @@
+{
+  "topics": [
+    {
+      "title": "Introduction to Python",
+      "content": "Python is a high-level, interpreted programming language known for its readability and simplicity. It supports multiple paradigms, including procedural, object-oriented, and functional programming. Python is widely used in web development, automation, data science, machine learning, and more."
+    },
+    {
+      "title": "Python Installation & Setup",
+      "content": "To install Python, download it from python.org and follow the setup instructions. After installation, verify using: python --version. Use IDEs like VS Code, PyCharm, or Jupyter Notebook to write Python programs."
+    }
+  ]
+}

@@ -37,7 +37,9 @@ const MainMenu: React.FC<MainMenuProps> = ({ user, onProfile }) => {
       alert(err?.message || "Failed to create match");
     }
   };
-
+const handleLearningModeClick = () => {
+    navigate("/learning");
+};
   // Join Match
   const handleJoinMatch = async (code: string) => {
     try {
@@ -77,7 +79,9 @@ const MainMenu: React.FC<MainMenuProps> = ({ user, onProfile }) => {
                 </button>
 
                 {/* Learning Mode */}
-                <button className="bg-blue-600 hover:bg-blue-700 p-6 rounded-lg transition-colors flex items-center justify-center space-x-3">
+                <button
+                onClick={handleLearningModeClick}
+                className="bg-blue-600 hover:bg-blue-700 p-6 rounded-lg transition-colors flex items-center justify-center space-x-3">
                   <Clock className="w-8 h-8" />
                   <div className="text-left">
                     <div className="font-bold text-lg">Learning Mode</div>

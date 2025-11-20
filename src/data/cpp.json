@@ -1,0 +1,84 @@
+{
+  "topics": [
+    {
+      "title": "1. Introduction to C++",
+      "content": "Theory:\nC++ is a high-performance, object-oriented programming language used in operating systems, games, database engines, and real-time systems.\n\nExample:\n#include <iostream>\nusing namespace std;\nint main() {\n    cout << \"Hello, C++\";\n    return 0;\n}"
+    },
+    {
+      "title": "2. Variables and Data Types",
+      "content": "Theory:\nVariables store data. Common data types: int, float, double, char, bool, string.\n\nExample:\nint age = 20;\nfloat price = 50.5;\nchar grade = 'A';\nbool isPass = true;"
+    },
+    {
+      "title": "3. Conditional Statements",
+      "content": "Theory:\nConditional statements control decision making: if, else if, else.\n\nExample:\nint marks = 85;\nif (marks >= 90) cout << \"A\";\nelse if (marks >= 80) cout << \"B\";\nelse cout << \"C\";"
+    },
+    {
+      "title": "4. Loops in C++",
+      "content": "Theory:\nLoops repeat code: for, while, do-while.\n\nExample:\nfor (int i = 1; i <= 5; i++) {\n    cout << i << \" \";\n}"
+    },
+    {
+      "title": "5. Functions in C++",
+      "content": "Theory:\nFunctions are reusable blocks of code with return type, name, and parameters.\n\nExample:\nint add(int a, int b) {\n    return a + b;\n}\nint main() {\n    cout << add(5, 3);\n}"
+    },
+    {
+      "title": "6. Arrays in C++",
+      "content": "Theory:\nArrays store multiple values of the same type in contiguous memory.\n\nExample:\nint arr[3] = {1, 2, 3};\nfor (int i = 0; i < 3; i++) cout << arr[i] << \" \";"
+    },
+    {
+      "title": "7. Strings in C++",
+      "content": "Theory:\nStrings are used to store text. Handled using <string>.\n\nExample:\nstring name = \"Alice\";\ncout << name;"
+    },
+    {
+      "title": "8. Pointers in C++",
+      "content": "Theory:\nPointers store memory addresses of variables.\n\nExample:\nint x = 10;\nint* p = &x;\ncout << *p;"
+    },
+    {
+      "title": "9. Structures",
+      "content": "Theory:\nStructures group different data types.\n\nExample:\nstruct Student {\n  string name;\n  int age;\n};\nStudent s = {\"Raj\", 19};\ncout << s.name;"
+    },
+    {
+      "title": "10. Object-Oriented Programming",
+      "content": "Theory:\nOOP focuses on classes, objects, abstraction, encapsulation, inheritance, polymorphism.\n\nExample:\nclass Car {\npublic:\n  void start() { cout << \"Car started\"; }\n};\nint main() { Car c; c.start(); }"
+    },
+    {
+      "title": "11. Classes and Objects",
+      "content": "Theory:\nClasses are blueprints. Objects are instances.\n\nExample:\nclass Student {\npublic:\n  string name;\n};\nStudent s; s.name = \"Aman\";"
+    },
+    {
+      "title": "12. Constructors and Destructors",
+      "content": "Theory:\nConstructors initialize objects; destructors clean resources.\n\nExample:\nclass A {\npublic:\n  A() { cout << \"Created\"; }\n  ~A() { cout << \"Destroyed\"; }\n};"
+    },
+    {
+      "title": "13. Inheritance",
+      "content": "Theory:\nOne class derives features from another.\n\nExample:\nclass A { public: void hello() { cout << \"Hello\"; } };\nclass B: public A {};\nB obj; obj.hello();"
+    },
+    {
+      "title": "14. Polymorphism",
+      "content": "Theory:\nSame function behaves differently: compile-time (overloading) and runtime (overriding).\n\nExample:\nclass A { public: virtual void show() { cout << \"A\"; } };\nclass B: public A { public: void show() { cout << \"B\"; } };"
+    },
+    {
+      "title": "15. Encapsulation",
+      "content": "Theory:\nWrapping data and functions together using private and public.\n\nExample:\nclass Bank {\nprivate: int balance;\npublic:\n  void setBal(int b){ balance=b; }\n  int getBal(){ return balance; }\n};"
+    },
+    {
+      "title": "16. File Handling",
+      "content": "Theory:\nUsed to read/write files using fstream.\n\nExample:\nofstream file(\"data.txt\");\nfile << \"Hello\";\nfile.close();"
+    },
+    {
+      "title": "17. Exception Handling",
+      "content": "Theory:\nHandle runtime errors using try, catch.\n\nExample:\ntry {\n  throw 10;\n} catch(int x) {\n  cout << \"Error\";\n}"
+    },
+    {
+      "title": "18. Templates",
+      "content": "Theory:\nTemplates allow generic programming.\n\nExample:\ntemplate <class T>\nT add(T a, T b){ return a+b; }"
+    },
+    {
+      "title": "19. Standard Template Library (STL)",
+      "content": "Theory:\nSTL provides powerful data structures: vector, map, set.\n\nExample:\nvector<int> v = {1,2,3};\nfor(int x: v) cout << x;"
+    },
+    {
+      "title": "20. Recursion in C++",
+      "content": "Theory:\nFunction calling itself repeatedly.\n\nExample:\nint fact(int n){ if(n==1) return 1; return n*fact(n-1); }"
+    }
+  ]
+}
