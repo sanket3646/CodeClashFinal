@@ -3,8 +3,8 @@ import axios from "axios";
 const JUDGE0_URL =
   "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true";
 
-const API_HOST = "judge0-ce.p.rapidapi.com";
-const API_KEY = "4424eea569msh14e525c909e2ea4p120474jsna199b2f052bd"; // replace this
+const API_HOST = import.meta.env.VITE_JUDGE0_HOST;
+const API_KEY = import.meta.env.VITE_JUDGE0_KEY;
 
 export async function runJudge0(code: string, language: string, input: string) {
   const langId = {
