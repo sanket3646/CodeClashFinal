@@ -1,8 +1,9 @@
-import  { useEffect, useState } from "react";
+// src/components/Profile.tsx
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { Trophy, Calendar, Clock, Code } from "lucide-react";
 
-import type { User, Match } from "../types";
+import type { User } from "../types";
 
 interface ProfileProps {
   user: User;
@@ -10,34 +11,63 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMatches = async () => {
       setLoading(true);
 
-      const { data: matchesData, error } = await supabase
+      // 1️⃣ Fetch matches normally (NO JOINS)
+      const { data, error } = await supabase
         .from("matches")
-        .select(
-          `
-            *,
-            player1:player1 (id, username),
-            player2:player2 (id, username),
-            winner:winner (id)
-          `
-        )
+        .select("*")
         .or(`player1.eq.${user.id},player2.eq.${user.id}`)
         .order("created_at", { ascending: false });
 
-      if (!error && matchesData) setMatches(matchesData as Match[]);
+      if (error || !data) {
+        console.error("Match fetch error:", error);
+        setLoading(false);
+        return;
+      }
+
+      const enriched: any[] = [];
+
+      // 2️⃣ Fetch user emails from Auth
+      for (let m of data) {
+        let p1 = null;
+        let p2 = null;
+        let w = null;
+
+        if (m.player1) {
+          const { data: u1 } = await supabase.auth.admin.getUserById(m.player1);
+          p1 = { id: m.player1, username: u1?.user?.email ?? "Unknown" };
+        }
+
+        if (m.player2) {
+          const { data: u2 } = await supabase.auth.admin.getUserById(m.player2);
+          p2 = { id: m.player2, username: u2?.user?.email ?? "Unknown" };
+        }
+
+        if (m.winner) {
+          const { data: uw } = await supabase.auth.admin.getUserById(m.winner);
+          w = { id: m.winner, username: uw?.user?.email ?? "Unknown" };
+        }
+
+        enriched.push({
+          ...m,
+          player1: p1,
+          player2: p2,
+          winner: w,
+        });
+      }
+
+      setMatches(enriched);
       setLoading(false);
     };
 
     fetchMatches();
   }, [user.id]);
-
- 
 
   if (loading) {
     return (
@@ -66,7 +96,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
           <div className="lg:col-span-1">
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
               <div className="text-center mb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <div className="w-24 h-24 bg-lineargradient-to-br from-green-400 to-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
                   <span className="text-2xl font-bold text-white">
                     {user.username.charAt(0).toUpperCase()}
                   </span>
@@ -154,7 +184,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
                 <div className="space-y-3">
                   {matches.slice(0, 5).map((match, index) => {
                     const opponent =
-                      match.player1.id === user.id
+                      match.player1?.id === user.id
                         ? match.player2
                         : match.player1;
 
