@@ -28,17 +28,13 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
 
       const enriched: any[] = [];
 
-      // helper fetch email from user_profiles
+      // helper: load email using auth.getUser()
       async function getEmail(uid: string) {
-        const { data } = await supabase
-          .from("user_profiles")
-          .select("email")
-          .eq("id", uid)
-          .single();
-        return data?.email ?? "Unknown";
+        const { data } = await supabase.auth.getUser(uid);
+        return data?.user?.email ?? "Unknown";
       }
 
-      // 2️⃣ Add emails
+      // 2️⃣ Enrich match rows with emails
       for (const m of matchRows ?? []) {
         const p1 = m.player1
           ? { id: m.player1, username: await getEmail(m.player1) }
@@ -57,14 +53,16 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
 
       setMatches(enriched);
 
-      // 3️⃣ Update fresh rating
+      // 3️⃣ Load fresh rating
       const { data: prof } = await supabase
         .from("user_profiles")
         .select("rating")
         .eq("id", user.id)
         .single();
 
-      if (prof?.rating !== undefined) setFreshRating(prof.rating);
+      if (prof?.rating !== undefined) {
+        setFreshRating(prof.rating);
+      }
 
       setLoading(false);
     }
@@ -146,18 +144,28 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
                       match.player1?.id === user.id ? match.player2 : match.player1;
 
                     return (
-                      <div key={idx} className="p-3 bg-gray-700 rounded flex justify-between">
+                      <div
+                        key={idx}
+                        className="p-3 bg-gray-700 rounded flex justify-between"
+                      >
                         <div className="flex space-x-3 items-center">
                           <div
                             className={`w-3 h-3 rounded-full ${
-                              match.winner?.id === user.id ? "bg-green-400" : "bg-red-400"
+                              match.winner?.id === user.id
+                                ? "bg-green-400"
+                                : "bg-red-400"
                             }`}
                           />
                           <div>
-                            <div className="text-white">vs {opponent?.username}</div>
-                            <div className="text-gray-400 text-sm">{match.problem}</div>
+                            <div className="text-white">
+                              vs {opponent?.username}
+                            </div>
+                            <div className="text-gray-400 text-sm">
+                              {match.problem_id}
+                            </div>
                           </div>
                         </div>
+
                         <div className="text-right text-gray-300">
                           {match.created_at?.split("T")[0]}
                         </div>
