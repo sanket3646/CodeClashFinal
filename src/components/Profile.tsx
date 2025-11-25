@@ -40,17 +40,17 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
         let w = null;
 
         if (m.player1) {
-          const { data: u1 } = await supabase.auth.admin.getUserById(m.player1);
+          const { data: u1 } = await supabase.auth.getUser(m.player1);
           p1 = { id: m.player1, username: u1?.user?.email ?? "Unknown" };
         }
 
         if (m.player2) {
-          const { data: u2 } = await supabase.auth.admin.getUserById(m.player2);
+          const { data: u2 } = await supabase.auth.getUser(m.player2);
           p2 = { id: m.player2, username: u2?.user?.email ?? "Unknown" };
         }
 
         if (m.winner) {
-          const { data: uw } = await supabase.auth.admin.getUserById(m.winner);
+          const { data: uw } = await supabase.auth.getUser(m.winner);
           w = { id: m.winner, username: uw?.user?.email ?? "Unknown" };
         }
 

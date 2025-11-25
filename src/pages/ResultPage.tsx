@@ -12,59 +12,84 @@ export default function ResultPage() {
   const [match, setMatch] = useState<any>(null);
   const [problem, setProblem] = useState<any>(null);
 
-  const [player1Email, setPlayer1Email] = useState<string>("Player 1");
-  const [player2Email, setPlayer2Email] = useState<string>("Player 2");
-  const [winnerEmail, setWinnerEmail] = useState<string>("");
+  const [player1Email, setPlayer1Email] = useState("Player 1");
+  const [player2Email, setPlayer2Email] = useState("Player 2");
+  const [winnerEmail, setWinnerEmail] = useState("");
+
+  const [p1RatingChange, setP1RatingChange] = useState(0);
+  const [p2RatingChange, setP2RatingChange] = useState(0);
 
   useEffect(() => {
     async function load() {
       if (!matchId) return;
-
       setLoading(true);
 
-      // Load match normally (NO JOIN)
-      const { data, error } = await supabase
+      // 1️⃣ Fetch match
+      const { data: matchData, error: matchErr } = await supabase
         .from("matches")
         .select("*")
         .eq("id", matchId)
         .single();
 
-      if (error || !data) {
-        console.error("Failed to load match:", error);
+      if (matchErr || !matchData) {
+        console.error("Failed to load match:", matchErr);
         setLoading(false);
         return;
       }
 
-      setMatch(data);
+      setMatch(matchData);
 
-      // 🔥 Load Player 1 email
-      if (data.player1) {
-        const { data: u1 } = await supabase.auth.admin.getUserById(data.player1);
-        setPlayer1Email(u1?.user?.email ?? "Player 1");
+      // helper to get email
+      async function getEmail(uid: string) {
+        if (!uid) return "";
+        const { data } = await supabase.auth.getUser(uid);
+        return data?.user?.email ?? "";
       }
 
-      // 🔥 Load Player 2 email
-      if (data.player2) {
-        const { data: u2 } = await supabase.auth.admin.getUserById(data.player2);
-        setPlayer2Email(u2?.user?.email ?? "Player 2");
+      // 2️⃣ Load emails
+      if (matchData.player1) {
+        setPlayer1Email(await getEmail(matchData.player1));
+      }
+      if (matchData.player2) {
+        setPlayer2Email(await getEmail(matchData.player2));
+      }
+      if (matchData.winner) {
+        setWinnerEmail(await getEmail(matchData.winner));
       }
 
-      // 🔥 Load Winner email
-      if (data.winner) {
-        const { data: uw } = await supabase.auth.admin.getUserById(data.winner);
-        setWinnerEmail(uw?.user?.email ?? "");
-      }
-
-      // Load problem details
-      const pid = data.problem_id || data.problem;
+      // 3️⃣ Load problem
+      const pid = matchData.problem_id || matchData.problem;
       if (pid) {
-        for (const level of ["Beginner", "Intermediate", "Advanced"] as const) {
-          const found = PROBLEMS[level].find((p) => p.id === pid);
+        const levels = ["Beginner", "Intermediate", "Advanced"] as const;
+        for (const lvl of levels) {
+          const found = PROBLEMS[lvl].find((p) => p.id === pid);
           if (found) {
             setProblem(found);
             break;
           }
         }
+      }
+
+      // 4️⃣ Rating change
+      async function getRating(uid: string) {
+        const { data } = await supabase
+          .from("user_profiles")
+          .select("rating")
+          .eq("id", uid)
+          .single();
+        return data?.rating ?? 1000;
+      }
+
+      if (matchData.player1 && matchData.player2) {
+        const oldP1 = matchData.old_p1_rating ?? null;
+        const oldP2 = matchData.old_p2_rating ?? null;
+
+        // get new ratings
+        const newP1 = await getRating(matchData.player1);
+        const newP2 = await getRating(matchData.player2);
+
+        if (oldP1 !== null) setP1RatingChange(newP1 - oldP1);
+        if (oldP2 !== null) setP2RatingChange(newP2 - oldP2);
       }
 
       setLoading(false);
@@ -97,31 +122,42 @@ export default function ResultPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold">Match Result</h1>
 
-        {/* Match summary */}
+        {/* SUMMARY */}
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <div className="flex justify-between items-center">
             <div>
               <div className="text-sm text-gray-300">Match ID</div>
               <div className="font-bold text-lg">{match.id}</div>
             </div>
-
             <div className="text-right">
               <div className="text-sm text-gray-300">Difficulty</div>
               <div className="font-bold">{match.difficulty}</div>
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
             <div className="p-4 bg-gray-900 rounded">
               <div className="text-sm text-gray-400">Player 1</div>
               <div className="font-bold text-lg">{player1Email}</div>
-              <div className="text-green-400 text-xl mt-2">{p1Score}</div>
+              <div className="text-green-400 text-xl mt-2">
+                {p1Score}{" "}
+                <span className="text-gray-400 text-sm">
+                  ({p1RatingChange > 0 ? "+" : ""}
+                  {p1RatingChange})
+                </span>
+              </div>
             </div>
 
             <div className="p-4 bg-gray-900 rounded">
               <div className="text-sm text-gray-400">Player 2</div>
               <div className="font-bold text-lg">{player2Email}</div>
-              <div className="text-green-400 text-xl mt-2">{p2Score}</div>
+              <div className="text-green-400 text-xl mt-2">
+                {p2Score}{" "}
+                <span className="text-gray-400 text-sm">
+                  ({p2RatingChange > 0 ? "+" : ""}
+                  {p2RatingChange})
+                </span>
+              </div>
             </div>
           </div>
 
@@ -133,7 +169,7 @@ export default function ResultPage() {
           </div>
         </div>
 
-        {/* Problem summary */}
+        {/* PROBLEM */}
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <h2 className="text-xl font-bold mb-2">
             {problem ? problem.title : "Problem"}
@@ -143,21 +179,23 @@ export default function ResultPage() {
             {problem ? problem.description : ""}
           </p>
 
-          {problem?.testcases && (
-            <>
-              <h3 className="text-lg font-semibold mb-2">Testcases</h3>
-              <div className="space-y-2">
-                {problem.testcases.map((tc: any, i: number) => (
-                  <div key={i} className="p-2 bg-gray-900 rounded border border-gray-700">
-                    <div className="text-sm text-gray-300">Input: {tc.input}</div>
-                    <div className="text-sm text-gray-300">Expected: {tc.expected}</div>
-                  </div>
-                ))}
+          <h3 className="text-lg font-semibold mb-2">Testcases</h3>
+          <div className="space-y-2">
+            {problem?.testcases?.map((tc: any, i: number) => (
+              <div
+                key={i}
+                className="p-2 bg-gray-900 rounded border border-gray-700"
+              >
+                <div className="text-sm text-gray-300">Input: {tc.input}</div>
+                <div className="text-sm text-gray-300">
+                  Expected: {tc.expected}
+                </div>
               </div>
-            </>
-          )}
+            ))}
+          </div>
         </div>
 
+        {/* BUTTONS */}
         <div className="flex space-x-3">
           <button
             onClick={() => navigate("/")}
@@ -168,8 +206,8 @@ export default function ResultPage() {
 
           <button
             onClick={() => {
-              navigator.clipboard?.writeText(location.href);
-              alert("Result URL copied");
+              navigator.clipboard.writeText(window.location.href);
+              alert("Copied result URL!");
             }}
             className="px-4 py-2 bg-gray-700 rounded"
           >
