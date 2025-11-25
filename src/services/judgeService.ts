@@ -1,10 +1,10 @@
 // src/services/judgeService.ts
 import axios from "axios";
 
-// Local → Netlify serverless function
+// Call Netlify serverless function (this runs Judge0)
 const NETLIFY_JUDGE = "/.netlify/functions/judge";
 
-// Mapping human language → Judge0 language ID
+// Map human-readable languages → Judge0 language IDs
 const LANGUAGE_MAP: Record<string, number> = {
   javascript: 63,
   python: 71,
@@ -12,18 +12,24 @@ const LANGUAGE_MAP: Record<string, number> = {
   java: 62,
 };
 
-// Main Judge runner (client → Netlify → Judge0)
 export async function runJudge0(
   code: string,
   language: string,
   input: string
 ) {
-  const langId = LANGUAGE_MAP[language.toLowerCase().trim()];
-  if (!langId) throw new Error("Unsupported language: " + language);
+  // Normalize language
+  const langKey = language?.toLowerCase().trim();
+  const langId = LANGUAGE_MAP[langKey];
+
+  if (!langId) {
+    console.error("❌ Unsupported language:", language);
+    throw new Error("Unsupported language: " + language);
+  }
 
   try {
+    // Forward request to Netlify → Judge0
     const response = await axios.post(NETLIFY_JUDGE, {
-      source_code: code ?? "",
+      source_code: code || "",
       stdin: input ?? "",
       language_id: langId,
     });
@@ -33,8 +39,9 @@ export async function runJudge0(
     console.error("🔥 JUDGE ERROR:", err.response?.data || err);
 
     throw new Error(
-      err.response?.data?.message ||
-        "Judge0 failed (serverless call). Check Netlify logs."
+      err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Judge0 failed (via Netlify function). Check Netlify logs."
     );
   }
 }
