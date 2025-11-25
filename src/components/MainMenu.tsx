@@ -38,7 +38,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ user, onProfile }) => {
     }
   };
 const handleLearningModeClick = () => {
-    navigate("/result/${matchId}");
+    navigate("/learning");
 };
   // Join Match
   const handleJoinMatch = async (code: string) => {
