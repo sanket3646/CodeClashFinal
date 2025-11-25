@@ -14,11 +14,14 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ⭐ NEW: fresh rating loaded from Supabase user_profiles
+  const [freshRating, setFreshRating] = useState<number>(user.rating);
+
   useEffect(() => {
     const fetchMatches = async () => {
       setLoading(true);
 
-      // 1️⃣ Fetch matches normally (NO JOINS)
+      // 1️⃣ Fetch matches (no joins)
       const { data, error } = await supabase
         .from("matches")
         .select("*")
@@ -33,7 +36,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
 
       const enriched: any[] = [];
 
-      // 2️⃣ Fetch user emails from Auth
+      // 2️⃣ Fetch user emails (auth)
       for (let m of data) {
         let p1 = null;
         let p2 = null;
@@ -63,6 +66,18 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
       }
 
       setMatches(enriched);
+
+      // 3️⃣ Fetch the UPDATED rating from user_profiles
+      const { data: prof } = await supabase
+        .from("user_profiles")
+        .select("rating")
+        .eq("id", user.id)
+        .single();
+
+      if (prof?.rating !== undefined) {
+        setFreshRating(prof.rating);
+      }
+
       setLoading(false);
     };
 
@@ -80,6 +95,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
+
         {/* HEADER */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-white">Profile</h1>
@@ -92,6 +108,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
           {/* USER INFO */}
           <div className="lg:col-span-1">
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
@@ -109,13 +126,14 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
               </div>
 
               <div className="space-y-4">
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Trophy className="w-5 h-5 text-yellow-400" />
                     <span className="text-gray-300">Rating</span>
                   </div>
                   <span className="text-2xl font-bold text-white">
-                    {user.rating}
+                    {freshRating}
                   </span>
                 </div>
 
@@ -134,6 +152,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
                   </div>
                   <span className="text-white">{user.averageSolveTime}s</span>
                 </div>
+
               </div>
             </div>
 
@@ -166,6 +185,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
                   </div>
                 ))}
               </div>
+
             </div>
           </div>
 
@@ -221,15 +241,17 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
                             {match.created_at?.split("T")[0] ?? "Unknown"}
                           </div>
                         </div>
+
                       </div>
                     );
                   })}
                 </div>
               )}
+
             </div>
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
   );
