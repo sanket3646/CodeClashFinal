@@ -11,6 +11,7 @@ import BattleRoom from "./pages/BattleRoom";
 import LearningMode from "./pages/LearningMode"; // ✅ added correct import
 import { User } from "./types";
 import { supabase } from "./lib/supabaseClient";
+import ResultPage from "./pages/ResultPage";
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -116,6 +117,7 @@ function App() {
           <Route path="/learning" element={<LearningMode />} /> {/* ✅ added missing route */}
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
+           <Route path="/result/:id" element={<ResultPage/>} />
         </>
       )}
     </Routes>

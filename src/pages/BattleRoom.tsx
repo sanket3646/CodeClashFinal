@@ -45,6 +45,8 @@ export default function BattleRoom() {
 
   // Load current user id & match -> problem
   useEffect(() => {
+    let mounted = true;
+
     async function init() {
       if (!matchId) return;
 
@@ -59,21 +61,26 @@ export default function BattleRoom() {
         // optionally redirect to login
         return;
       }
+      if (!mounted) return;
       setCurrentUserId(user.id);
 
       // load match (we need difficulty, problem_id, player1, player2, status, scores)
       const { data: matchRow, error: matchErr } = await supabase
         .from("matches")
-        .select("difficulty, problem_id, player1, player2, status, player1_score, player2_score")
+        .select(
+          "difficulty, problem_id, player1, player2, status, player1_score, player2_score"
+        )
         .eq("id", matchId)
         .single();
 
       if (matchErr || !matchRow) {
         console.error("Failed to load match:", matchErr);
+        if (!mounted) return;
         setLoading(false);
         return;
       }
 
+      if (!mounted) return;
       // decide player side
       setIsPlayer1(matchRow.player1 === user.id);
 
@@ -87,14 +94,22 @@ export default function BattleRoom() {
       const pb = bucket.find((p) => p.id === pid);
 
       if (!pb) {
-        console.error("Problem not found for id:", pid, "difficulty:", difficulty);
+        console.error(
+          "Problem not found for id:",
+          pid,
+          "difficulty:",
+          difficulty
+        );
+        if (!mounted) return;
         setLoading(false);
         return;
       }
 
       setProblemTitle(pb.title);
       setProblemDescription(pb.description);
-      setExamples(pb.testcases.map((t) => ({ input: t.input, output: t.expected })));
+      setExamples(
+        pb.testcases.map((t) => ({ input: t.input, output: t.expected }))
+      );
       setRawTestcases(pb.testcases);
 
       // if match already finished, redirect to result page
@@ -103,13 +118,16 @@ export default function BattleRoom() {
         return;
       }
 
-      // if both scores already present, finish match and redirect
+      // if both scores already present, set finished and redirect
       if (matchRow.player1_score != null && matchRow.player2_score != null) {
-        // optionally ensure status is finished
-        await supabase
-          .from("matches")
-          .update({ status: "finished" })
-          .eq("id", matchId);
+        try {
+          await supabase
+            .from("matches")
+            .update({ status: "finished" })
+            .eq("id", matchId);
+        } catch (e) {
+          console.warn("Failed to mark finished (already finished?):", e);
+        }
         navigate(`/result/${matchId}`);
         return;
       }
@@ -118,36 +136,51 @@ export default function BattleRoom() {
 
       // subscribe to realtime updates for this match row
       try {
-  const chan = supabase.channel(`public:matches:id=eq.${matchId}`)
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "matches", filter: `id=eq.${matchId}` },
-      (payload: any) => {
-        const rec = payload?.record as any;
-        if (!rec) return;
+        const chan = supabase
+          .channel(`public:matches:id=eq.${matchId}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "matches",
+              filter: `id=eq.${matchId}`,
+            },
+            // Supabase sends updated row in `payload.new`
+            async (payload: any) => {
+              const rec = payload?.new;
+              if (!rec) return;
 
-        if (rec.status === "finished") {
-          navigate(`/result/${matchId}`);
-        }
+              // If match is finished directly, navigate to result
+              if (rec.status === "finished") {
+                navigate(`/result/${matchId}`);
+                return;
+              }
 
-        if (rec.player1_score != null && rec.player2_score != null) {
-  (async () => {
-    try {
-      await supabase
-        .from("matches")
-        .update({ status: "finished" })
-        .eq("id", matchId);
+              // If both players submitted / have scores, compute winner and finish match
+              if (rec.player1_score != null && rec.player2_score != null) {
+                try {
+                  // compute winner using scores
+                  let winner: string | "draw" = "draw";
+                  if (rec.player1_score > rec.player2_score) winner = rec.player1;
+                  else if (rec.player2_score > rec.player1_score)
+                    winner = rec.player2;
+                  else winner = "draw";
 
-      navigate(`/result/${matchId}`);
-    } catch (err: any) {
-      console.error("Error finishing match:", err);
-      navigate(`/result/${matchId}`); // still redirect
-    }
-  });
-        }
-      }
-    )
-    .subscribe();
+                  // call finishMatch to ensure DB is updated correctly
+                  await finishMatch(matchId, winner as string | "draw");
+
+                  // navigate to result
+                  navigate(`/result/${matchId}`);
+                } catch (err: any) {
+                  console.error("Error finishing match in subscription:", err);
+                  // still navigate so users see results
+                  navigate(`/result/${matchId}`);
+                }
+              }
+            }
+          )
+          .subscribe();
 
         subscriptionRef.current = chan;
       } catch (subErr) {
@@ -158,6 +191,7 @@ export default function BattleRoom() {
     init();
 
     return () => {
+      mounted = false;
       if (subscriptionRef.current) {
         try {
           supabase.removeChannel(subscriptionRef.current);
@@ -168,7 +202,7 @@ export default function BattleRoom() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId]);
+  }, [matchId, navigate]);
 
   // Timer
   useEffect(() => {
@@ -288,7 +322,9 @@ export default function BattleRoom() {
             className="bg-gray-700 text-white p-2 rounded"
             value={language}
             onChange={(e) =>
-              setLanguage(e.target.value as "javascript" | "python" | "cpp" | "java")
+              setLanguage(
+                e.target.value as "javascript" | "python" | "cpp" | "java"
+              )
             }
             disabled={submitted} // lock language after submit
           >
@@ -298,7 +334,9 @@ export default function BattleRoom() {
             <option value="java">Java</option>
           </select>
 
-          <div className="text-2xl font-bold text-green-400">{formatTime(timeLeft)}</div>
+          <div className="text-2xl font-bold text-green-400">
+            {formatTime(timeLeft)}
+          </div>
         </div>
       </div>
 
@@ -307,13 +345,22 @@ export default function BattleRoom() {
         {/* Problem panel */}
         <div className="w-1/2 p-6 overflow-y-auto bg-[#0b0b0b] border-r border-gray-700">
           <h2 className="text-3xl font-bold mb-4">{problemTitle}</h2>
-          <p className="text-gray-300 mb-6 whitespace-pre-line">{problemDescription}</p>
+          <p className="text-gray-300 mb-6 whitespace-pre-line">
+            {problemDescription}
+          </p>
 
           <h3 className="text-xl font-semibold mb-2">Examples</h3>
           {examples.map((ex, i) => (
-            <div key={i} className="mb-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
-              <p className="text-sm text-gray-300"><strong>Input:</strong> {ex.input}</p>
-              <p className="text-sm text-gray-300"><strong>Output:</strong> {ex.output}</p>
+            <div
+              key={i}
+              className="mb-3 p-3 bg-gray-800 rounded-lg border border-gray-700"
+            >
+              <p className="text-sm text-gray-300">
+                <strong>Input:</strong> {ex.input}
+              </p>
+              <p className="text-sm text-gray-300">
+                <strong>Output:</strong> {ex.output}
+              </p>
             </div>
           ))}
         </div>
