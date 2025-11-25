@@ -35,7 +35,7 @@ exports.handler = async (event) => {
 
     // Send request to Judge0 CE via RapidAPI
     const resp = await axios.post(
-      "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
+      "https://ce.judge0.com/submissions?base64_encoded=false&wait=true",
       {
         source_code,
         stdin,
