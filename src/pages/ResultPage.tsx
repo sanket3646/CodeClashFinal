@@ -41,8 +41,9 @@ export default function ResultPage() {
 
       setMatch(m);
 
-      // helper: load email from auth.users
+      // helper: ALWAYS load email from auth.users (NOT user_profiles)
       async function getEmail(uid: string) {
+        if (!uid) return "";
         const { data } = await supabase.auth.getUser(uid);
         return data?.user?.email ?? "";
       }
@@ -52,7 +53,7 @@ export default function ResultPage() {
       if (m.player2) setPlayer2Email(await getEmail(m.player2));
       if (m.winner) setWinnerEmail(await getEmail(m.winner));
 
-      // 3️⃣ Load problem from local problem bank
+      // 3️⃣ Load problem
       const pid = m.problem_id || m.problem;
       if (pid) {
         const levels: Array<"Beginner" | "Intermediate" | "Advanced"> = [
@@ -69,7 +70,7 @@ export default function ResultPage() {
         }
       }
 
-      // 4️⃣ Rating changes
+      // 4️⃣ Rating change display
       async function getRating(uid: string) {
         const { data } = await supabase
           .from("user_profiles")
@@ -112,6 +113,10 @@ export default function ResultPage() {
 
   const p1Score = match.player1_score ?? "—";
   const p2Score = match.player2_score ?? "—";
+
+  // winner display fix
+  const finalWinner =
+    winnerEmail || (p1Score === p2Score ? "Draw" : "Deciding...");
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
@@ -162,9 +167,7 @@ export default function ResultPage() {
           {/* Winner */}
           <div className="bg-gray-800 p-4 rounded mt-6 border border-gray-700">
             <div className="text-gray-300 text-sm">Winner</div>
-            <div className="text-2xl font-bold">
-              {winnerEmail || (p1Score === p2Score ? "Draw" : "Deciding...")}
-            </div>
+            <div className="text-2xl font-bold">{finalWinner}</div>
           </div>
         </div>
 
