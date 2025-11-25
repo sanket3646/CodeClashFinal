@@ -25,8 +25,9 @@ export default function BattleRoom() {
     []
   );
   const [rawTestcases, setRawTestcases] = useState<Testcase[]>([]);
-const STARTER_CODE: Record<string, string> = {
-  javascript: `const fs = require("fs");
+
+  const STARTER_CODE: Record<string, string> = {
+    javascript: `const fs = require("fs");
 const input = fs.readFileSync(0, "utf8").trim().split(" ");
 
 const a = Number(input[0]);
@@ -34,11 +35,11 @@ const b = Number(input[1]);
 
 // Write your answer:
 `,
-  python: `a, b = map(int, input().split())
+    python: `a, b = map(int, input().split())
 
 # Write your answer:
 `,
-  cpp: `#include <iostream>
+    cpp: `#include <iostream>
 using namespace std;
 
 int main() {
@@ -50,7 +51,7 @@ int main() {
     return 0;
 }
 `,
-  java: `import java.util.*;
+    java: `import java.util.*;
 class Main {
   public static void main(String[] args) {
     Scanner sc = new Scanner(System.in);
@@ -61,36 +62,30 @@ class Main {
   }
 }
 `,
-};
-
-
-
+  };
 
   const [language, setLanguage] = useState<
     "javascript" | "python" | "cpp" | "java"
   >("javascript");
   const [code, setCode] = useState(STARTER_CODE["javascript"]);
 
-  const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes
+  const [timeLeft, setTimeLeft] = useState<number>(300);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // player info
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isPlayer1, setIsPlayer1] = useState<boolean | null>(null);
   const autoSubmittedRef = useRef(false);
 
-  // Keep a ref to subscription so we can unsubscribe on unmount
   const subscriptionRef = useRef<any>(null);
 
-  // Load current user id & match -> problem
+  // Load match and user
   useEffect(() => {
     let mounted = true;
 
     async function init() {
       if (!matchId) return;
 
-      // current user
       const {
         data: { user },
         error: userErr,
@@ -98,13 +93,12 @@ class Main {
 
       if (userErr || !user) {
         console.error("No auth user:", userErr);
-        // optionally redirect to login
         return;
       }
+
       if (!mounted) return;
       setCurrentUserId(user.id);
 
-      // load match (we need difficulty, problem_id, player1, player2, status, scores)
       const { data: matchRow, error: matchErr } = await supabase
         .from("matches")
         .select(
@@ -120,26 +114,19 @@ class Main {
         return;
       }
 
-      if (!mounted) return;
-      // decide player side
       setIsPlayer1(matchRow.player1 === user.id);
 
-      // find problem from local bank
       const difficulty = matchRow.difficulty as
         | "Beginner"
         | "Intermediate"
         | "Advanced";
       const pid = matchRow.problem_id as string;
+
       const bucket = PROBLEMS[difficulty] || [];
       const pb = bucket.find((p) => p.id === pid);
 
       if (!pb) {
-        console.error(
-          "Problem not found for id:",
-          pid,
-          "difficulty:",
-          difficulty
-        );
+        console.error("Problem not found:", pid, difficulty);
         if (!mounted) return;
         setLoading(false);
         return;
@@ -152,29 +139,25 @@ class Main {
       );
       setRawTestcases(pb.testcases);
 
-      // if match already finished, redirect to result page
       if (matchRow.status === "finished") {
         navigate(`/result/${matchId}`);
         return;
       }
 
-      // if both scores already present, set finished and redirect
       if (matchRow.player1_score != null && matchRow.player2_score != null) {
         try {
           await supabase
             .from("matches")
             .update({ status: "finished" })
             .eq("id", matchId);
-        } catch (e) {
-          console.warn("Failed to mark finished (already finished?):", e);
-        }
+        } catch {}
         navigate(`/result/${matchId}`);
         return;
       }
 
       setLoading(false);
 
-      // subscribe to realtime updates for this match row
+      // Realtime — FIXED (winner logic removed)
       try {
         const chan = supabase
           .channel(`public:matches:id=eq.${matchId}`)
@@ -186,45 +169,21 @@ class Main {
               table: "matches",
               filter: `id=eq.${matchId}`,
             },
-            // Supabase sends updated row in `payload.new`
-            async (payload: any) => {
+            (payload: any) => {
               const rec = payload?.new;
               if (!rec) return;
 
-              // If match is finished directly, navigate to result
+              // ❗ ONLY redirect if finished
               if (rec.status === "finished") {
                 navigate(`/result/${matchId}`);
-                return;
-              }
-
-              // If both players submitted / have scores, compute winner and finish match
-              if (rec.player1_score != null && rec.player2_score != null) {
-                try {
-                  // compute winner using scores
-                  let winner: string | "draw" = "draw";
-                  if (rec.player1_score > rec.player2_score) winner = rec.player1;
-                  else if (rec.player2_score > rec.player1_score)
-                    winner = rec.player2;
-                  else winner = "draw";
-
-                  // call finishMatch to ensure DB is updated correctly
-                  await finishMatch(matchId, winner as string | "draw");
-
-                  // navigate to result
-                  navigate(`/result/${matchId}`);
-                } catch (err: any) {
-                  console.error("Error finishing match in subscription:", err);
-                  // still navigate so users see results
-                  navigate(`/result/${matchId}`);
-                }
               }
             }
           )
           .subscribe();
 
         subscriptionRef.current = chan;
-      } catch (subErr) {
-        console.error("Realtime subscription failed:", subErr);
+      } catch (err) {
+        console.error("Realtime subscription failed:", err);
       }
     }
 
@@ -235,13 +194,10 @@ class Main {
       if (subscriptionRef.current) {
         try {
           supabase.removeChannel(subscriptionRef.current);
-        } catch (e) {
-          // ignore
-        }
+        } catch {}
         subscriptionRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, navigate]);
 
   // Timer
@@ -249,22 +205,15 @@ class Main {
     if (loading) return;
 
     if (timeLeft <= 0) {
-      // auto-submit if not yet submitted
       if (!submitted && !autoSubmittedRef.current) {
         autoSubmittedRef.current = true;
-        handleSubmit(true).catch((e) => console.error(e));
+        handleSubmit(true).catch(console.error);
       }
       return;
     }
 
     const timer = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 0) {
-          clearInterval(timer);
-          return 0;
-        }
-        return t - 1;
-      });
+      setTimeLeft((t) => (t <= 0 ? 0 : t - 1));
     }, 1000);
 
     return () => clearInterval(timer);
@@ -278,26 +227,21 @@ class Main {
     return `${m}:${s}`;
   };
 
-  // Submit handler (single submission)
+  // Submit
   async function handleSubmit(auto = false) {
     if (submitted) return;
     if (!matchId) return;
-    if (!currentUserId) {
-      alert("Not authenticated.");
-      return;
-    }
+    if (!currentUserId) return alert("Not authenticated.");
 
     setSubmitting(true);
 
     try {
       setSubmitted(true);
 
-      // Determine which score field to update
       const playerField: "player1_score" | "player2_score" = isPlayer1
         ? "player1_score"
         : "player2_score";
 
-      // Evaluate solution (runs Judge0 per testcase and saves score)
       const playerScore = await evaluateSolution(
         matchId,
         code,
@@ -306,9 +250,6 @@ class Main {
         playerField
       );
 
-      console.log("Player score:", playerScore);
-
-      // mark status as submitted for this player (optional)
       await supabase
         .from("matches")
         .update({
@@ -316,20 +257,18 @@ class Main {
         })
         .eq("id", matchId);
 
-      // check whether both players have now submitted / scores present
       const winnerOrNull = await checkMatchCompletion(matchId);
 
       if (winnerOrNull !== null) {
-        // finish match and redirect
-        await finishMatch(matchId, winnerOrNull as string | "draw");
+        await finishMatch(matchId, winnerOrNull);
         navigate(`/result/${matchId}`);
         return;
       }
 
       alert(
         auto
-          ? `Auto-submitted. Your score: ${playerScore}/${rawTestcases.length}`
-          : `Submitted. Your score: ${playerScore}/${rawTestcases.length}. Waiting for opponent...`
+          ? `Auto-submitted. Score: ${playerScore}/${rawTestcases.length}`
+          : `Submitted! Score: ${playerScore}/${rawTestcases.length}. Waiting for opponent...`
       );
     } catch (err: any) {
       console.error("Submit error:", err);
@@ -362,12 +301,15 @@ class Main {
             className="bg-gray-700 text-white p-2 rounded"
             value={language}
             onChange={(e) => {
-            const lang = e.target.value as "javascript" | "python" | "cpp" | "java";
-            setLanguage(lang);
-            setCode(STARTER_CODE[lang]);   // 👈 Auto-load correct starter code
-          }}
-
-            disabled={submitted} // lock language after submit
+              const lang = e.target.value as
+                | "javascript"
+                | "python"
+                | "cpp"
+                | "java";
+              setLanguage(lang);
+              setCode(STARTER_CODE[lang]);
+            }}
+            disabled={submitted}
           >
             <option value="javascript">JavaScript (Node)</option>
             <option value="python">Python 3</option>
@@ -381,9 +323,9 @@ class Main {
         </div>
       </div>
 
-      {/* Main split */}
+      {/* Split */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Problem panel */}
+        {/* Problem */}
         <div className="w-1/2 p-6 overflow-y-auto bg-[#0b0b0b] border-r border-gray-700">
           <h2 className="text-3xl font-bold mb-4">{problemTitle}</h2>
           <p className="text-gray-300 mb-6 whitespace-pre-line">
@@ -406,7 +348,7 @@ class Main {
           ))}
         </div>
 
-        {/* Editor panel */}
+        {/* Editor */}
         <div className="w-1/2 flex flex-col">
           <div className="flex-1">
             <Editor
@@ -415,7 +357,7 @@ class Main {
               language={language === "cpp" ? "cpp" : language}
               theme="vs-dark"
               value={code}
-              onChange={(val) => setCode(val || "")}
+              onChange={(v) => setCode(v || "")}
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,
@@ -430,19 +372,17 @@ class Main {
               {submitted ? "Submitted — waiting for result" : "You can submit once"}
             </div>
 
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => handleSubmit(false)}
-                disabled={submitted || submitting}
-                className={`px-6 py-3 text-lg font-bold rounded ${
-                  submitted || submitting
-                    ? "bg-gray-600 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
-              >
-                {submitting ? "Submitting..." : submitted ? "Submitted" : "Submit Solution"}
-              </button>
-            </div>
+            <button
+              onClick={() => handleSubmit(false)}
+              disabled={submitted || submitting}
+              className={`px-6 py-3 text-lg font-bold rounded ${
+                submitted || submitting
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              {submitting ? "Submitting..." : submitted ? "Submitted" : "Submit Solution"}
+            </button>
           </div>
         </div>
       </div>
