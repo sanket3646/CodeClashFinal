@@ -1,7 +1,7 @@
 // src/components/Profile.tsx
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { Trophy, Calendar, Clock, Code } from "lucide-react";
+import { Trophy, Calendar, Clock } from "lucide-react";
 
 import type { User } from "../types";
 
