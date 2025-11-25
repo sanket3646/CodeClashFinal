@@ -26,45 +26,50 @@ export default function ResultPage() {
 
       setLoading(true);
 
-      // 1️⃣ Load match
-      const { data: m } = await supabase
+      // 1️⃣ Fetch match row
+      const { data: m, error } = await supabase
         .from("matches")
         .select("*")
         .eq("id", matchId)
         .single();
 
-      if (!m) {
+      if (error || !m) {
+        console.error("Match load error:", error);
         setLoading(false);
         return;
       }
 
       setMatch(m);
 
-      // helper
+      // helper: load email from auth.users
       async function getEmail(uid: string) {
-        const { data } = await supabase
-          .from("user_profiles")
-          .select("email")
-          .eq("id", uid)
-          .single();
-        return data?.email ?? "";
+        const { data } = await supabase.auth.getUser(uid);
+        return data?.user?.email ?? "";
       }
 
-      // load emails
+      // 2️⃣ Load emails
       if (m.player1) setPlayer1Email(await getEmail(m.player1));
       if (m.player2) setPlayer2Email(await getEmail(m.player2));
       if (m.winner) setWinnerEmail(await getEmail(m.winner));
 
-      // load problem
+      // 3️⃣ Load problem from local problem bank
       const pid = m.problem_id || m.problem;
       if (pid) {
-        for (const lvl of ["Beginner", "Intermediate", "Advanced"] as const) {
+        const levels: Array<"Beginner" | "Intermediate" | "Advanced"> = [
+          "Beginner",
+          "Intermediate",
+          "Advanced",
+        ];
+        for (const lvl of levels) {
           const found = PROBLEMS[lvl].find((p) => p.id === pid);
-          if (found) setProblem(found);
+          if (found) {
+            setProblem(found);
+            break;
+          }
         }
       }
 
-      // rating changes
+      // 4️⃣ Rating changes
       async function getRating(uid: string) {
         const { data } = await supabase
           .from("user_profiles")
@@ -115,7 +120,6 @@ export default function ResultPage() {
 
         {/* SUMMARY */}
         <div className="bg-gray-800 p-6 rounded border border-gray-700">
-
           <div className="flex justify-between mb-6">
             <div>
               <div className="text-gray-300 text-sm">Match ID</div>
@@ -127,9 +131,8 @@ export default function ResultPage() {
             </div>
           </div>
 
-          {/* Players */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+            {/* Player 1 */}
             <div className="bg-gray-900 p-4 rounded">
               <div className="text-gray-400 text-sm">Player 1</div>
               <div className="text-lg font-bold">{player1Email}</div>
@@ -142,6 +145,7 @@ export default function ResultPage() {
               </div>
             </div>
 
+            {/* Player 2 */}
             <div className="bg-gray-900 p-4 rounded">
               <div className="text-gray-400 text-sm">Player 2</div>
               <div className="text-lg font-bold">{player2Email}</div>
@@ -175,14 +179,15 @@ export default function ResultPage() {
           </p>
 
           <h3 className="font-semibold text-lg mb-2">Testcases</h3>
-
-          {problem?.testcases?.map((tc:any, i:number) => (
+          {problem?.testcases?.map((tc: any, i: number) => (
             <div
               key={i}
               className="bg-gray-900 p-3 rounded border border-gray-700 mb-2"
             >
               <div className="text-gray-300 text-sm">Input: {tc.input}</div>
-              <div className="text-gray-300 text-sm">Expected: {tc.expected}</div>
+              <div className="text-gray-300 text-sm">
+                Expected: {tc.expected}
+              </div>
             </div>
           ))}
         </div>
