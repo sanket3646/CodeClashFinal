@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabaseClient";
 import { runJudge0 } from "./judgeService";
 
+/* ---------------------- 1️⃣ Evaluate Solution ---------------------- */
 export async function evaluateSolution(
   matchId: string,
   code: string,
@@ -19,7 +20,7 @@ export async function evaluateSolution(
     if (output === expected) score++;
   }
 
-  // update score in DB
+  // Save score
   const { error } = await supabase
     .from("matches")
     .update({ [playerField]: score })
@@ -30,6 +31,7 @@ export async function evaluateSolution(
   return score;
 }
 
+/* ---------------------- 2️⃣ Decide Winner ---------------------- */
 export async function checkMatchCompletion(matchId: string) {
   const { data, error } = await supabase
     .from("matches")
@@ -37,12 +39,11 @@ export async function checkMatchCompletion(matchId: string) {
     .eq("id", matchId)
     .single();
 
-  if (error || !data) return null; // 🔥 FIX: safe data handling
+  if (error || !data) return null;
 
-  const p1 = data.player1_score;
-  const p2 = data.player2_score;
+  const { player1_score: p1, player2_score: p2 } = data;
 
-  // If either score is null → not finished
+  // If either missing → match not complete
   if (p1 == null || p2 == null) return null;
 
   if (p1 > p2) return data.player1;
@@ -50,20 +51,24 @@ export async function checkMatchCompletion(matchId: string) {
   return "draw";
 }
 
+/* ---------------------- 3️⃣ Finish Match (rating + final update) ---------------------- */
 export async function finishMatch(matchId: string, winner: string | "draw") {
-  // 1. Load match info
+  // Load match players
   const { data: match, error: matchErr } = await supabase
     .from("matches")
-    .select("player1, player2")
+    .select("player1, player2, status")
     .eq("id", matchId)
     .single();
 
   if (matchErr || !match) throw matchErr;
 
+  // If already finished → do nothing
+  if (match.status === "finished") return;
+
   const p1 = match.player1;
   const p2 = match.player2;
 
-  // 2. Load both player ratings
+  /* --- Load ratings --- */
   const { data: r1 } = await supabase
     .from("user_profiles")
     .select("rating")
@@ -79,8 +84,11 @@ export async function finishMatch(matchId: string, winner: string | "draw") {
   let p1Rating = r1?.rating ?? 1000;
   let p2Rating = r2?.rating ?? 1000;
 
+  // Save old ratings for ResultPage
+  const old_p1_rating = p1Rating;
+  const old_p2_rating = p2Rating;
 
-  // 3. Apply rating change
+  /* --- Apply rating change --- */
   if (winner === p1) {
     p1Rating += 8;
     p2Rating -= 8;
@@ -89,30 +97,24 @@ export async function finishMatch(matchId: string, winner: string | "draw") {
     p1Rating -= 8;
   }
 
-  // Prevent negative rating
+  // Prevent negative ratings
   p1Rating = Math.max(0, p1Rating);
   p2Rating = Math.max(0, p2Rating);
 
-  // 4. Update player ratings
-  await supabase
-    .from("user_profiles")
-    .update({ rating: p1Rating })
-    .eq("id", p1);
+  /* --- Update ratings --- */
+  await supabase.from("user_profiles").update({ rating: p1Rating }).eq("id", p1);
+  await supabase.from("user_profiles").update({ rating: p2Rating }).eq("id", p2);
 
-  await supabase
-    .from("user_profiles")
-    .update({ rating: p2Rating })
-    .eq("id", p2);
-
-  // 5. Mark match finished
+  /* --- Mark match finished + save rating history --- */
   const { error } = await supabase
     .from("matches")
     .update({
       status: "finished",
       winner: winner === "draw" ? null : winner,
+      old_p1_rating,
+      old_p2_rating,
     })
     .eq("id", matchId);
 
   if (error) throw error;
 }
-

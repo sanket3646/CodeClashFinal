@@ -1,12 +1,84 @@
 {
   "topics": [
     {
-      "title": "Introduction to Python",
-      "content": "Python is a high-level, interpreted programming language known for its readability and simplicity. It supports multiple paradigms, including procedural, object-oriented, and functional programming. Python is widely used in web development, automation, data science, machine learning, and more."
+      "title": "1. Introduction to Python",
+      "content": "Theory:\nPython is a high-level, interpreted, and easy-to-learn programming language.\n\nExample:\nprint(\"Hello, Python!\")"
     },
     {
-      "title": "Python Installation & Setup",
-      "content": "To install Python, download it from python.org and follow the setup instructions. After installation, verify using: python --version. Use IDEs like VS Code, PyCharm, or Jupyter Notebook to write Python programs."
+      "title": "2. Setting Up Python",
+      "content": "Theory:\nTo run Python, install Python from python.org and check the version.\n\nExample:\nCheck version using:\npython --version"
+    },
+    {
+      "title": "3. Basic Syntax",
+      "content": "Theory:\nPython uses indentation instead of braces.\n\nExample:\nif True:\n    print(\"Indented block\")"
+    },
+    {
+      "title": "4. Variables and Data Types",
+      "content": "Theory:\nPython supports int, float, string, boolean, list, tuple, dict.\n\nExample:\nage = 20\nprice = 99.9\nname = \"Parvati\""
+    },
+    {
+      "title": "5. Operators",
+      "content": "Theory:\nPython supports arithmetic, logical, comparison, and assignment operators.\n\nExample:\na = 10\nb = 5\nprint(a + b)"
+    },
+    {
+      "title": "6. Conditional Statements",
+      "content": "Theory:\nUse if, elif, and else for decision making.\n\nExample:\nmarks = 80\nif marks > 75:\n    print(\"Distinction\")"
+    },
+    {
+      "title": "7. Loops in Python",
+      "content": "Theory:\nPython supports for and while loops.\n\nExample:\nfor i in range(5):\n    print(i)"
+    },
+    {
+      "title": "8. Functions",
+      "content": "Theory:\nFunctions are reusable blocks created using def.\n\nExample:\ndef add(a, b):\n    return a + b"
+    },
+    {
+      "title": "9. Lists",
+      "content": "Theory:\nLists are ordered, changeable, and allow duplicate values.\n\nExample:\nfruits = [\"apple\", \"banana\", \"orange\"]\nprint(fruits[0])"
+    },
+    {
+      "title": "10. Tuples",
+      "content": "Theory:\nTuples are ordered but immutable.\n\nExample:\ncoords = (10, 20)\nprint(coords)"
+    },
+    {
+      "title": "11. Dictionaries",
+      "content": "Theory:\nDictionaries store data in key-value pairs.\n\nExample:\nstudent = {\"name\": \"Parvati\", \"age\": 20}\nprint(student[\"name\"])"
+    },
+    {
+      "title": "12. Sets",
+      "content": "Theory:\nSets store unique values and are unordered.\n\nExample:\nnums = {1, 2, 3, 3}\nprint(nums)"
+    },
+    {
+      "title": "13. String Methods",
+      "content": "Theory:\nPython contains many useful built-in string functions.\n\nExample:\ntext = \"hello\"\nprint(text.upper())"
+    },
+    {
+      "title": "14. File Handling",
+      "content": "Theory:\nPython can read and write files using open().\n\nExample:\nwith open(\"demo.txt\", \"w\") as f:\n    f.write(\"Hello World\")"
+    },
+    {
+      "title": "15. Exception Handling",
+      "content": "Theory:\nErrors are handled using try-except blocks.\n\nExample:\ntry:\n    print(10/0)\nexcept:\n    print(\"Error occurred\")"
+    },
+    {
+      "title": "16. Object-Oriented Programming",
+      "content": "Theory:\nPython supports classes, objects, inheritance, polymorphism, and encapsulation.\n\nExample:\nclass Student:\n    def __init__(self, name):\n        self.name = name"
+    },
+    {
+      "title": "17. Modules and Packages",
+      "content": "Theory:\nModules allow code reusability; packages group multiple modules.\n\nExample:\nimport math\nprint(math.sqrt(16))"
+    },
+    {
+      "title": "18. List Comprehension",
+      "content": "Theory:\nA concise way to create lists.\n\nExample:\nsquares = [x*x for x in range(5)]\nprint(squares)"
+    },
+    {
+      "title": "19. Lambda Functions",
+      "content": "Theory:\nAnonymous functions created using lambda keyword.\n\nExample:\nadd = lambda a, b: a + b\nprint(add(2, 3))"
+    },
+    {
+      "title": "20. Python Libraries",
+      "content": "Theory:\nPopular libraries include NumPy, Pandas, Matplotlib, Flask, Django.\n\nExample:\nimport random\nprint(random.randint(1, 10))"
     }
   ]
 }
