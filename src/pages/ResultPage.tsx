@@ -13,7 +13,7 @@ export default function ResultPage() {
 
   const [player1Email, setPlayer1Email] = useState("Player 1");
   const [player2Email, setPlayer2Email] = useState("Player 2");
-  const [winnerEmail, setWinnerEmail] = useState("");
+ 
 
   const [p1RatingChange, setP1RatingChange] = useState(0);
   const [p2RatingChange, setP2RatingChange] = useState(0);
@@ -51,7 +51,7 @@ export default function ResultPage() {
       // 2️⃣ Load emails
       if (m.player1) setPlayer1Email(await getEmail(m.player1));
       if (m.player2) setPlayer2Email(await getEmail(m.player2));
-      if (m.winner) setWinnerEmail(await getEmail(m.winner));
+     
 
       // 3️⃣ Load problem
       const pid = m.problem_id || m.problem;
@@ -115,8 +115,7 @@ export default function ResultPage() {
   const p2Score = match.player2_score ?? "—";
 
   // winner display fix
-  const finalWinner =
-    winnerEmail || (p1Score === p2Score ? "Draw" : "Deciding...");
+ 
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
