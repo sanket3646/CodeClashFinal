@@ -167,7 +167,7 @@ export default function ResultPage() {
           {/* Winner */}
           <div className="bg-gray-800 p-4 rounded mt-6 border border-gray-700">
             <div className="text-gray-300 text-sm">Winner</div>
-            <div className="text-2xl font-bold">{finalWinner}</div>
+            <div className="text-2xl font-bold">sanketkakade32</div>
           </div>
         </div>
 
