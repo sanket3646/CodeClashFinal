@@ -18,7 +18,12 @@ export default function ResultPage() {
 
       const { data, error } = await supabase
         .from("matches")
-        .select("*")
+        .select(
+          `*,
+           player1:player1 ( id, username ),
+           player2:player2 ( id, username ),
+           winner:winner ( id, username )`
+        )
         .eq("id", matchId)
         .single();
 
@@ -30,15 +35,12 @@ export default function ResultPage() {
 
       setMatch(data);
 
-      // find problem either in problem_id or problem field
+      // find problem info
       const pid = data.problem_id || data.problem;
       if (pid) {
-        const keys = Object.keys(PROBLEMS) as Array<
-          "Beginner" | "Intermediate" | "Advanced"
-        >;
-
-        for (const k of keys) {
-          const found = PROBLEMS[k].find((p) => p.id === pid);
+        const levels = ["Beginner", "Intermediate", "Advanced"] as const;
+        for (const level of levels) {
+          const found = PROBLEMS[level].find((p) => p.id === pid);
           if (found) {
             setProblem(found);
             break;
@@ -71,11 +73,19 @@ export default function ResultPage() {
   const p1Score = match.player1_score ?? "—";
   const p2Score = match.player2_score ?? "—";
 
+  const player1Name = match.player1?.username ?? "Player 1";
+  const player2Name = match.player2?.username ?? "Player 2";
+
+  const winnerName =
+    match.winner?.username ??
+    (p1Score === p2Score ? "Draw" : "Deciding...");
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold">Match Result</h1>
 
+        {/* Match Summary */}
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <div className="flex justify-between items-center">
             <div>
@@ -92,26 +102,20 @@ export default function ResultPage() {
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-900 rounded">
               <div className="text-sm text-gray-400">Player 1</div>
-              <div className="font-bold text-lg">{match.player1}</div>
+              <div className="font-bold text-lg">{player1Name}</div>
               <div className="text-green-400 text-xl mt-2">{p1Score}</div>
             </div>
 
             <div className="p-4 bg-gray-900 rounded">
               <div className="text-sm text-gray-400">Player 2</div>
-              <div className="font-bold text-lg">{match.player2 || "N/A"}</div>
+              <div className="font-bold text-lg">{player2Name}</div>
               <div className="text-green-400 text-xl mt-2">{p2Score}</div>
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-gray-850 rounded border border-gray-700">
+          <div className="mt-6 p-4 bg-gray-800 rounded border border-gray-700">
             <div className="text-sm text-gray-300">Winner</div>
-            <div className="text-2xl font-bold">
-              {match.winner
-                ? match.winner
-                : p1Score === p2Score
-                ? "Draw"
-                : "Deciding..."}
-            </div>
+            <div className="text-2xl font-bold">{winnerName}</div>
           </div>
         </div>
 
@@ -122,10 +126,10 @@ export default function ResultPage() {
           </h2>
 
           <p className="text-gray-300 mb-4">
-            {problem ? problem.description : match.problem}
+            {problem ? problem.description : ""}
           </p>
 
-          {problem && problem.testcases && (
+          {problem?.testcases && (
             <>
               <h3 className="text-lg font-semibold mb-2">Testcases</h3>
               <div className="space-y-2">

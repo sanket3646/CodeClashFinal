@@ -25,11 +25,51 @@ export default function BattleRoom() {
     []
   );
   const [rawTestcases, setRawTestcases] = useState<Testcase[]>([]);
+const STARTER_CODE: Record<string, string> = {
+  javascript: `const fs = require("fs");
+const input = fs.readFileSync(0, "utf8").trim().split(" ");
 
-  const [code, setCode] = useState("// Write your solution here");
+const a = Number(input[0]);
+const b = Number(input[1]);
+
+// Write your answer:
+`,
+  python: `a, b = map(int, input().split())
+
+# Write your answer:
+`,
+  cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    int a, b;
+    cin >> a >> b;
+
+    // Write your answer:
+
+    return 0;
+}
+`,
+  java: `import java.util.*;
+class Main {
+  public static void main(String[] args) {
+    Scanner sc = new Scanner(System.in);
+    int a = sc.nextInt();
+    int b = sc.nextInt();
+
+    // Write your answer:
+  }
+}
+`,
+};
+
+
+
+
   const [language, setLanguage] = useState<
     "javascript" | "python" | "cpp" | "java"
   >("javascript");
+  const [code, setCode] = useState(STARTER_CODE["javascript"]);
 
   const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes
   const [submitted, setSubmitted] = useState<boolean>(false);
@@ -321,11 +361,12 @@ export default function BattleRoom() {
           <select
             className="bg-gray-700 text-white p-2 rounded"
             value={language}
-            onChange={(e) =>
-              setLanguage(
-                e.target.value as "javascript" | "python" | "cpp" | "java"
-              )
-            }
+            onChange={(e) => {
+            const lang = e.target.value as "javascript" | "python" | "cpp" | "java";
+            setLanguage(lang);
+            setCode(STARTER_CODE[lang]);   // 👈 Auto-load correct starter code
+          }}
+
             disabled={submitted} // lock language after submit
           >
             <option value="javascript">JavaScript (Node)</option>
